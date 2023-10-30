@@ -20,10 +20,14 @@ class BlogCreateView(generics.CreateAPIView):
     def perform_create(self, serializer):
         title = serializer.validated_data.get('title')
         slug = serializer.validated_data.get('slug') or None
+        author = serializer.validated_data.get('author') or None
 
         if slug is None:
             slug = slugify(title)
-        serializer.save(slug=slug)
+
+        if author is None:
+            author = self.request.user
+        serializer.save(slug=slug, author=author)
 
 
 blog_create_view = BlogCreateView.as_view()
@@ -42,6 +46,13 @@ class BlogUpdateView(generics.UpdateAPIView):
     queryset = Blog.published.all()
     serializer_class = BlogSerializer
     lookup_field = 'id'
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+
+        if not instance.slug:
+            slug = slugify(instance.title)
+        serializer.save(slug=slug)
 
 
 blog_update_view = BlogUpdateView.as_view()
